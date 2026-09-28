@@ -1,0 +1,28 @@
+{
+  "name": "@pigeonworks-llc/forescope",
+  "version": "0.1.0",
+  "description": "Mold spec (forescoping method): JSON Schema, foundry intake check, and Logic/Requirement Proof",
+  "type": "module",
+  "bin": { "forescope": "src/cli.ts" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema/mold.schema.json": "./schema/mold.schema.json"
+  },
+  "files": ["src", "schema", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "ci": "bun run typecheck && bun test"
+  },
+  "dependencies": {
+    "ajv": "^8.17.0",
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.10",
+    "typescript": "^5.6.3"
+  },
+  "license": "Apache-2.0",
+  "author": "合同会社 Pigeonworks (池淵峻一)",
+  "repository": { "type": "git", "url": "git+ssh://git@github.com/pigeonworks-llc/forescope.git" }
+}
