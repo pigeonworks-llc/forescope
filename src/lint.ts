@@ -9,7 +9,7 @@
 // It never blocks a write; it tells the fabless what to fix before building.
 import Ajv2020 from "ajv/dist/2020.js";
 import schema from "../schema/mold.schema.json" with { type: "json" };
-import type { Mold, MoldScope } from "./types.ts";
+import type { Mold, MoldScope } from "./types.js";
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema);
 

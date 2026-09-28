@@ -6,8 +6,8 @@
 //                      not-applicable (declared with a reason)
 // A mold that fails the intake check is not built against, so nothing runs.
 import { spawnSync } from "node:child_process";
-import { lintMold } from "./lint.ts";
-import type { Mold, Proof } from "./types.ts";
+import { lintMold } from "./lint.js";
+import type { Mold, Proof } from "./types.js";
 
 export class NaError extends Error {}
 
