@@ -1,0 +1,9 @@
+// The public surface aiq and the dotfiles shim depend on.
+import { expect, test } from "bun:test";
+import * as api from "./index.ts";
+
+test("public surface", () => {
+	for (const name of ["lintMold", "moldScope", "functionArgs", "proveMold", "renderProof", "NaError"]) {
+		expect(typeof (api as Record<string, unknown>)[name]).toBe("function");
+	}
+});

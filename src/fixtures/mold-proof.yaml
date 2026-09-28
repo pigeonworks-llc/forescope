@@ -1,0 +1,50 @@
+# Stage 6: turn a mold into its proofs. Logic Proof = each condition's verify
+# command actually executed (env, exit, time). Requirement Proof = one row per
+# condition ID, derived from the Logic Proof. Schema: dot_local/lib/mold-lint/mold.schema.json
+id: mold-proof
+revision: 1
+issued: "2026-09-28"
+due: "2026-10-05"
+fabless:
+  name: shunichi
+  role: designer
+foundry:
+  name: weak-main
+  role: implementer
+function: "f(mold_file: str, na: list): proof"
+inputs:
+  - name: mold_file
+    type: str
+    domain: "a mold that passes mold-lint"
+  - name: na
+    type: list
+    domain: "condition IDs declared not-applicable, each with a reason"
+files:
+  - dot_local/lib/mold-lint/executable_mold-proof.py
+  - dot_local/lib/mold-lint/tests/test_executable_mold-proof.py
+  - dot_local/lib/mold-lint/README.md
+conditions:
+  - id: c1
+    when: "every verify command exits 0"
+    then: "every condition row is satisfied and the tool exits 0 (deliverable)"
+  - id: c2
+    when: "some verify command exits non-zero"
+    then: "that row is not-satisfied, the tool exits 1 and lists it as a return reason"
+  - id: c3
+    when: "a condition is declared n/a with a reason"
+    then: "its command is not run and the row is not-applicable with the reason"
+  - id: c4
+    when: "the mold fails mold-lint"
+    then: "no command is run and the tool exits 1 with the defects"
+verify:
+  - condition: c1
+    command: "uv run --with pytest --with pyyaml --with jsonschema pytest -q dot_local/lib/mold-lint/tests/test_executable_mold-proof.py -k all_pass"
+  - condition: c2
+    command: "uv run --with pytest --with pyyaml --with jsonschema pytest -q dot_local/lib/mold-lint/tests/test_executable_mold-proof.py -k failing"
+  - condition: c3
+    command: "uv run --with pytest --with pyyaml --with jsonschema pytest -q dot_local/lib/mold-lint/tests/test_executable_mold-proof.py -k not_applicable"
+  - condition: c4
+    command: "uv run --with pytest --with pyyaml --with jsonschema pytest -q dot_local/lib/mold-lint/tests/test_executable_mold-proof.py -k invalid_mold"
+refs:
+  molds: [mold-plan-pointer]
+  plan7_node: 01KXWKV1MMSE3WH21WAT0GNGPP
