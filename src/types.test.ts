@@ -1,6 +1,6 @@
 // types.ts is type-only; this pins that a schema-shaped object satisfies Mold.
 import { expect, test } from "bun:test";
-import type { Mold } from "./types.ts";
+import type { Mold } from "./types.js";
 
 test("a schema-shaped object satisfies Mold", () => {
 	const m: Mold = {

@@ -1,7 +1,7 @@
 // Ported from dotfiles dot_local/lib/mold-lint/tests/test_executable_mold-lint.py
 // (same cases, same expectations). The foundry intake check, manual 1-1..1-3.
 import { describe, expect, test } from "bun:test";
-import { lintMold, moldScope } from "./index.ts";
+import { lintMold, moldScope } from "./index.js";
 
 function goodMold(): Record<string, unknown> {
 	return {

@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { NaError, proveMold, renderProof } from "./index.ts";
+import { NaError, proveMold, renderProof } from "./index.js";
 
 function mold(verify: Record<string, string>) {
 	return {

@@ -10,8 +10,8 @@
 //   proof: 0 deliverable / 1 not deliverable / 2 usage error
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
-import { lintMold, moldScope, NaError, proveMold, renderProof } from "./index.ts";
-import type { Mold } from "./types.ts";
+import { lintMold, moldScope, NaError, proveMold, renderProof } from "./index.js";
+import type { Mold } from "./types.js";
 
 function usage(): number {
 	console.error(
