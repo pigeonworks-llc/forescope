@@ -1,6 +1,6 @@
 {
   "name": "@pigeonworks-llc/forescope",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mold spec (forescoping method): JSON Schema, foundry intake check, and Logic/Requirement Proof",
   "type": "module",
   "bin": { "forescope": "src/cli.ts" },

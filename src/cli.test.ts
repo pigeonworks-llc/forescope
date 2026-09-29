@@ -21,7 +21,7 @@ test("lint --json prints the scope", () => {
 	expect(r.status).toBe(0);
 	const s = JSON.parse(r.stdout);
 	expect(s.id).toBe("mold-plan-pointer");
-	expect(s.conditions).toEqual(["c1", "c2", "c3"]);
+	expect(s.test_cases).toEqual(["TC-001", "TC-002", "TC-003"]);
 });
 
 test("lint defects exit 1 on stderr", () => {
@@ -42,5 +42,24 @@ test("unknown subcommand is 2", () => {
 });
 
 test("proof --na without reason is 2", () => {
-	expect(run("proof", join(FIX, "mold-proof.yaml"), "--na", "c1").status).toBe(2);
+	expect(run("proof", join(FIX, "mold-proof.yaml"), "--na", "TC-001").status).toBe(2);
+});
+
+test("proof --response without a verdict is 2", () => {
+	expect(run("proof", join(FIX, "mold-proof.yaml"), "--response", "TC-001=maybe").status).toBe(2);
+});
+
+test("proof pending (no command, no response) exits 1 and names the case", () => {
+	const r = run("proof", join(FIX, "mold-proof.yaml"));
+	expect(r.status).toBe(1);
+	expect(r.stdout).toContain("TC-003");
+});
+
+test("proof with --response for a command-less case answers that case", () => {
+	const r = run("proof", join(FIX, "mold-plan-pointer.yaml"), "--response", "TC-003=satisfied:verified manually");
+	// TC-001/002 carry dotfiles-only commands (fail here) so delivery is blocked,
+	// but TC-003 must be answered by the --response, not listed as pending.
+	expect(r.stdout).toContain("TC-003");
+	expect(r.stdout).toContain("verified manually");
+	expect(r.stdout).not.toContain("未応答");
 });
