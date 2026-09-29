@@ -8,13 +8,19 @@ test("a schema-shaped object satisfies Mold", () => {
 		revision: 1,
 		issued: "2026-09-28",
 		due: "2026-10-05",
-		fabless: { name: "a", role: "r" },
-		foundry: { name: "b", role: "r" },
-		function: "f(x: int): y",
-		inputs: [{ name: "x", type: "int", domain: "1..9" }],
+		fabless: "a",
+		foundry: "b",
+		parameters: [{ name: "x", domain: "1..9" }],
+		test_cases: [
+			{
+				id: "TC-001",
+				scenario: "s",
+				data: { x: 5 },
+				expected: "e",
+				command: "true",
+			},
+		],
 		files: ["src/**"],
-		conditions: [{ id: "c1", when: "w", then: "t" }],
-		verify: [{ condition: "c1", command: "true" }],
 	};
-	expect(m.conditions[0]?.id).toBe("c1");
+	expect(m.test_cases[0]?.id).toBe("TC-001");
 });

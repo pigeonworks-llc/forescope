@@ -1,43 +1,42 @@
 # Dogfood: the next slice of Stage 5 (plan `mold:` pointer read at ExitPlanMode),
-# written as a mold so the lint has a real subject. Schema: dot_local/lib/mold-lint/mold.schema.json
+# written as a mold so the lint has a real subject. Schema: forescope repo.
 id: mold-plan-pointer
 revision: 1
 issued: "2026-09-28"
 due: "2026-10-05"
-fabless:
-  name: shunichi
-  role: designer
-foundry:
-  name: weak-main
-  role: implementer
-function: "f(plan_mold: str, mold_file: str): advisory"
-inputs:
+fabless: shunichi
+foundry: weak-main
+parameters:
   - name: plan_mold
-    type: str
     domain: "plan frontmatter `mold:` value, empty when absent"
   - name: mold_file
-    type: str
     domain: ".agents/molds/<plan_mold>.yaml, may not exist"
+test_cases:
+  - id: TC-001
+    scenario: "plan_mold is set and mold_file passes the intake check"
+    data:
+      plan_mold: "mold-plan-pointer"
+      mold_file: ".agents/molds/mold-plan-pointer.yaml"
+    expected: "advisory lists the mold's files and test case IDs"
+    command: "bats dot_claude/hooks/private_tests/exit-plan-scope-context.bats -f mold-ok"
+  - id: TC-002
+    scenario: "plan_mold is set and mold_file fails the intake check"
+    data:
+      plan_mold: "bad-mold"
+      mold_file: ".agents/molds/bad-mold.yaml"
+    expected: "advisory lists the defects instead of a scope"
+    command: "bats dot_claude/hooks/private_tests/exit-plan-scope-context.bats -f mold-defect"
+  - id: TC-003
+    scenario: "plan_mold is empty"
+    data:
+      plan_mold: ""
+      mold_file: ""
+    expected: "behaviour is unchanged from today (plan7_node / metadata.scope path)"
+    # no command — answered by a person or AI via `forescope proof --response`
+    # no command — answered by a person or AI via `forescope proof --response`
 files:
   - dot_claude/hooks/executable_exit-plan-scope-context.sh
   - dot_claude/hooks/private_tests/exit-plan-scope-context.bats
   - dot_claude/context/plan-schema.md
-conditions:
-  - id: c1
-    when: "plan_mold is set and mold_file passes mold-lint"
-    then: "advisory lists the mold's files and condition IDs"
-  - id: c2
-    when: "plan_mold is set and mold_file fails mold-lint"
-    then: "advisory lists the defects instead of a scope"
-  - id: c3
-    when: "plan_mold is empty"
-    then: "behaviour is unchanged from today (plan7_node / metadata.scope path)"
-verify:
-  - condition: c1
-    command: "bats dot_claude/hooks/private_tests/exit-plan-scope-context.bats -f mold-ok"
-  - condition: c2
-    command: "bats dot_claude/hooks/private_tests/exit-plan-scope-context.bats -f mold-defect"
-  - condition: c3
-    command: "bats dot_claude/hooks/private_tests/exit-plan-scope-context.bats"
 refs:
   plan7_node: 01KXWKV1MMSE3WH21WAT0GNGPP

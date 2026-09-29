@@ -4,51 +4,54 @@ id: mold-area-boundary
 revision: 1
 issued: "2026-09-28"
 due: "2026-10-05"
-fabless:
-  name: shunichi
-  role: designer
-foundry:
-  name: weak-main
-  role: implementer
-function: "f(commits: list, registry: dict, baseline: dict): report"
-inputs:
+fabless: shunichi
+foundry: weak-main
+parameters:
   - name: commits
-    type: list
     domain: "git log --name-only over the window (default 90 days)"
   - name: registry
-    type: dict
     domain: ".agents/areas.yaml incl. interfaces and boundary_threshold"
   - name: baseline
-    type: dict
     domain: ".agents/area-boundary.baseline.json, may be absent"
+test_cases:
+  - id: TC-001
+    scenario: "an area's cross-area change ratio exceeds boundary_threshold"
+    data:
+      commits: "git log --name-only (90 days)"
+      registry: ".agents/areas.yaml"
+      baseline: "present"
+    expected: "the report marks it unclear-boundary"
+    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k threshold"
+  - id: TC-002
+    scenario: "a cross-area change only touches a declared interface pair"
+    data:
+      commits: "cross-area commits on an interface pair"
+      registry: ".agents/areas.yaml with interfaces"
+      baseline: "present"
+    expected: "it is not counted as crossing"
+    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k interface"
+  - id: TC-003
+    scenario: "--check and an area is worse than its baseline"
+    data:
+      commits: "git log --name-only (90 days)"
+      registry: ".agents/areas.yaml"
+      baseline: "worse than current"
+    expected: "exit 1 naming the area; equal or better exits 0"
+    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k ratchet"
+  - id: TC-004
+    scenario: "--update-baseline"
+    data:
+      commits: "git log --name-only (90 days)"
+      registry: ".agents/areas.yaml"
+      baseline: "to be rewritten"
+    expected: "the baseline file is rewritten from the current measurement"
+    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k update_baseline"
 files:
   - dot_local/lib/area-ledger/executable_area-boundary.py
   - dot_local/lib/area-ledger/tests/test_executable_area-boundary.py
   - .agents/areas.yaml
   - .agents/area-boundary.baseline.json
   - makefiles/tools.mk
-conditions:
-  - id: c1
-    when: "an area's cross-area change ratio exceeds boundary_threshold"
-    then: "the report marks it unclear-boundary"
-  - id: c2
-    when: "a cross-area change only touches a declared interface pair"
-    then: "it is not counted as crossing"
-  - id: c3
-    when: "--check and an area is worse than its baseline"
-    then: "exit 1 naming the area; equal or better exits 0"
-  - id: c4
-    when: "--update-baseline"
-    then: "the baseline file is rewritten from the current measurement"
-verify:
-  - condition: c1
-    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k threshold"
-  - condition: c2
-    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k interface"
-  - condition: c3
-    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k ratchet"
-  - condition: c4
-    command: "uv run --with pytest --with pyyaml pytest -q dot_local/lib/area-ledger/tests/test_executable_area-boundary.py -k update_baseline"
 refs:
   molds: [mold-proof]
   plan7_node: 01KXWKV1MMSE3WH21WAT0GNGPP

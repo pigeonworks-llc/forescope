@@ -1,5 +1,4 @@
-// Ported from dotfiles dot_local/lib/mold-lint/tests/test_executable_mold-lint.py
-// (same cases, same expectations). The foundry intake check, manual 1-1..1-3.
+// The foundry intake check (forescopingmethod PR #19, foundry manual 1-1..1-3).
 import { describe, expect, test } from "bun:test";
 import { lintMold, moldScope } from "./index.js";
 
@@ -9,22 +8,29 @@ function goodMold(): Record<string, unknown> {
 		revision: 1,
 		issued: "2026-09-28",
 		due: "2026-10-05",
-		fabless: { name: "shunichi", role: "designer" },
-		foundry: { name: "weak-main", role: "implementer" },
-		function: "f(amount: int, deadline: date): approve | reject",
-		inputs: [
-			{ name: "amount", type: "int", domain: "1..1000000" },
-			{ name: "deadline", type: "date", domain: ">= issued" },
+		fabless: "shunichi",
+		foundry: "weak-main",
+		parameters: [
+			{ name: "amount", domain: "1..1000000" },
+			{ name: "deadline", domain: ">= issued" },
+		],
+		test_cases: [
+			{
+				id: "TC-001",
+				scenario: "amount is within the approve threshold",
+				precondition: "issued = 2026-09-28",
+				data: { amount: 50000, deadline: "2026-10-01" },
+				expected: "approve",
+			},
+			{
+				id: "TC-002",
+				scenario: "amount exceeds the approve threshold",
+				data: { amount: 500000, deadline: "2026-10-01" },
+				expected: "reject",
+				command: "bun test tests/approval.test.ts -t large",
+			},
 		],
 		files: ["src/approval/**"],
-		conditions: [
-			{ id: "c1", when: "amount <= 100000", then: "approve" },
-			{ id: "c2", when: "amount > 100000", then: "reject" },
-		],
-		verify: [
-			{ condition: "c1", command: "bun test tests/approval.test.ts -t c1" },
-			{ condition: "c2", command: "bun test tests/approval.test.ts -t c2" },
-		],
 	};
 }
 
@@ -41,40 +47,52 @@ describe("lintMold", () => {
 		expect(joined(m)).toContain("due");
 	});
 
-	test("argument without input row", () => {
+	test("name in data but not in parameters", () => {
 		const m = goodMold();
-		m.inputs = (m.inputs as unknown[]).slice(0, 1);
-		expect(joined(m)).toContain("deadline");
+		(m.test_cases as { data: Record<string, unknown> }[])[0]!.data = {
+			amount: 50000,
+			deadline: "2026-10-01",
+			extra: "x",
+		};
+		expect(joined(m)).toContain("`extra` has no parameter");
 	});
 
-	test("input row without argument", () => {
+	test("parameter appearing in no test case", () => {
 		const m = goodMold();
-		(m.inputs as unknown[]).push({ name: "extra", type: "str", domain: "any" });
-		expect(joined(m)).toContain("extra");
+		// Remove the only case whose data uses `deadline`.
+		(m.test_cases as { data: Record<string, unknown> }[])[0]!.data = { amount: 50000 };
+		(m.test_cases as { data: Record<string, unknown> }[])[1]!.data = { amount: 500000 };
+		expect(joined(m)).toContain("`deadline` appears in no test case");
 	});
 
-	test("condition without verification", () => {
+	test("duplicate test case id", () => {
 		const m = goodMold();
-		m.verify = (m.verify as unknown[]).slice(0, 1);
-		expect(joined(m)).toContain("c2");
+		(m.test_cases as { id: string }[])[1]!.id = "TC-001";
+		expect(joined(m)).toContain("duplicate test case id `TC-001`");
 	});
 
-	test("verification for unknown condition", () => {
+	test("duplicate parameter name", () => {
 		const m = goodMold();
-		(m.verify as unknown[]).push({ condition: "c9", command: "true" });
-		expect(joined(m)).toContain("c9");
+		(m.parameters as { name: string; domain: string }[]).push({ name: "amount", domain: "any" });
+		expect(joined(m)).toContain("duplicate parameter name `amount`");
 	});
 
-	test("duplicate condition id", () => {
+	test("string data with name= tokens passes 1-2", () => {
 		const m = goodMold();
-		(m.conditions as { id: string }[])[1]!.id = "c1";
-		expect(joined(m)).toContain("duplicate condition id `c1`");
+		(m.test_cases as { data: unknown }[])[0]!.data = "amount=50000 deadline=2026-10-01";
+		expect(lintMold(m)).toEqual([]);
 	});
 
-	test("function not in f form", () => {
+	test("string data with no names is a defect", () => {
 		const m = goodMold();
-		m.function = "approves small amounts";
-		expect(joined(m)).toContain("function");
+		(m.test_cases as { data: unknown }[])[0]!.data = "50000, 2026-10-01";
+		expect(joined(m)).toContain("no parameter names found");
+	});
+
+	test("bad test case id form", () => {
+		const m = goodMold();
+		(m.test_cases as { id: string }[])[0]!.id = "c1";
+		expect(joined(m)).toContain("must match pattern");
 	});
 
 	test("unbounded file glob is rejected", () => {
@@ -86,10 +104,11 @@ describe("lintMold", () => {
 	test("all problems reported at once", () => {
 		const m = goodMold();
 		delete m.due;
-		m.verify = (m.verify as unknown[]).slice(0, 1);
+		(m.test_cases as { data: Record<string, unknown> }[])[0]!.data = { amount: 50000 };
+		(m.test_cases as { data: Record<string, unknown> }[])[1]!.data = { amount: 500000 };
 		const out = joined(m);
 		expect(out).toContain("due");
-		expect(out).toContain("c2");
+		expect(out).toContain("no test case");
 	});
 
 	test("non-object mold is a defect, not a crash", () => {
@@ -98,12 +117,12 @@ describe("lintMold", () => {
 });
 
 describe("moldScope", () => {
-	test("scope lists files and condition ids", () => {
+	test("scope lists files and test case ids", () => {
 		expect(moldScope(goodMold() as never)).toEqual({
 			id: "mold-demo-1",
 			revision: 1,
 			files: ["src/approval/**"],
-			conditions: ["c1", "c2"],
+			test_cases: ["TC-001", "TC-002"],
 		});
 	});
 });
